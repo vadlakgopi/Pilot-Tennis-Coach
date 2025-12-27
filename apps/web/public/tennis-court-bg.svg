@@ -1,0 +1,47 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <!-- Tennis Court Background -->
+  <defs>
+    <pattern id="courtPattern" x="0" y="0" width="1920" height="1080" patternUnits="userSpaceOnUse">
+      <!-- Court Base (Green) -->
+      <rect width="1920" height="1080" fill="#2d5016"/>
+      
+      <!-- Court Lines (White) -->
+      <g stroke="#ffffff" stroke-width="4" fill="none" opacity="0.8">
+        <!-- Outer Court Lines -->
+        <rect x="200" y="100" width="1520" height="880" stroke-width="6"/>
+        
+        <!-- Center Service Line -->
+        <line x1="960" y1="100" x2="960" y2="980" stroke-width="4"/>
+        
+        <!-- Service Boxes -->
+        <!-- Left Service Box -->
+        <rect x="200" y="100" width="760" height="440" stroke-width="3"/>
+        <line x1="580" y1="100" x2="580" y2="540" stroke-width="3"/>
+        <line x1="200" y1="320" x2="960" y2="320" stroke-width="3"/>
+        
+        <!-- Right Service Box -->
+        <rect x="960" y="100" width="760" height="440" stroke-width="3"/>
+        <line x1="1340" y1="100" x2="1340" y2="540" stroke-width="3"/>
+        <line x1="960" y1="320" x2="1720" y2="320" stroke-width="3"/>
+        
+        <!-- Bottom Service Boxes -->
+        <rect x="200" y="540" width="760" height="440" stroke-width="3"/>
+        <line x1="580" y1="540" x2="580" y2="980" stroke-width="3"/>
+        <line x1="200" y1="760" x2="960" y2="760" stroke-width="3"/>
+        
+        <rect x="960" y="540" width="760" height="440" stroke-width="3"/>
+        <line x1="1340" y1="540" x2="1340" y2="980" stroke-width="3"/>
+        <line x1="960" y1="760" x2="1720" y2="760" stroke-width="3"/>
+      </g>
+      
+      <!-- Net (Simplified) -->
+      <line x1="960" y1="100" x2="960" y2="980" stroke="#ffffff" stroke-width="8" opacity="0.6" stroke-dasharray="10,5"/>
+    </pattern>
+  </defs>
+  
+  <rect width="1920" height="1080" fill="url(#courtPattern)" opacity="0.15"/>
+</svg>
+
+
+
+

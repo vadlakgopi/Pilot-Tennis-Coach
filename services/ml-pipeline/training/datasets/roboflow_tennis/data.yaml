@@ -1,0 +1,17 @@
+# Tennis Ball Detection Dataset
+path: /Users/sireeshanaroju/Desktop/Pilot-Tennis-Coach/Pilot-Tennis-Coach/services/ml-pipeline/training/datasets/roboflow_tennis
+train: train/images
+val: valid/images
+test: test/images
+
+# Classes
+nc: 1
+names: ['ball']
+
+# Roboflow metadata
+roboflow:
+  workspace: tennis-e47pp
+  project: tennis-ball-spwux
+  version: 2
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/tennis-e47pp/tennis-ball-spwux/dataset/2

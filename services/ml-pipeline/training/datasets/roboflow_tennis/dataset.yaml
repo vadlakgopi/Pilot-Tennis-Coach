@@ -1,0 +1,9 @@
+# Tennis Ball Detection Dataset
+path: /Users/sireeshanaroju/Desktop/Pilot-Tennis-Coach/Pilot-Tennis-Coach/services/ml-pipeline/training/datasets/roboflow_tennis
+train: train/images
+val: val/images
+test: test/images  # optional
+
+# Classes
+nc: 1  # number of classes
+names: ['tennis_ball']  # class names

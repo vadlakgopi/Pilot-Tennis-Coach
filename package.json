@@ -1,0 +1,40 @@
+{
+  "name": "pilot-tennis-coach",
+  "version": "1.0.0",
+  "description": "Tennis match analytics platform with AI-powered video analysis",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "cd apps/api && uvicorn main:app --reload",
+    "dev:web": "cd apps/web && npm run dev",
+    "dev:mobile": "cd apps/mobile && npm run start",
+    "build": "npm run test && npm run build:web && npm run build:api",
+    "build:web": "cd apps/web && npm run build",
+    "build:api": "cd apps/api && python -m pip install -r requirements.txt",
+    "test": "npm run test:api && npm run test:web",
+    "test:api": "cd apps/api && pytest",
+    "test:web": "cd apps/web && npm run test",
+    "lint": "npm run lint:web && npm run lint:api",
+    "lint:web": "cd apps/web && npm run lint",
+    "lint:api": "cd apps/api && flake8 .",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "dependencies": {
+    "babel-preset-expo": "^54.0.8",
+    "react-native-worklets": "^0.5.1",
+    "react-refresh": "^0.18.0"
+  }
+}

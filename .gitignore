@@ -1,0 +1,84 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+.nyc_output/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ML Models & Data
+models/*.pth
+models/*.onnx
+models/*.pt
+data/raw/
+data/processed/
+*.h5
+*.hdf5
+
+# Video files (large)
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+!**/test-videos/*.mp4
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker
+.dockerignore
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS
+Thumbs.db
+.DS_Store
+
+
+
+
+
+

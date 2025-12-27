@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Tennis Buddy",
+    "slug": "tennis-analytics",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "platforms": ["ios", "android", "web"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tennisanalytics.app"
+    },
+    "android": {
+      "package": "com.tennisanalytics.app",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Tennis Buddy to access your camera to record matches.",
+          "microphonePermission": "Allow Tennis Buddy to access your microphone to record audio with videos."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    }
+  }
+}
+
+
+

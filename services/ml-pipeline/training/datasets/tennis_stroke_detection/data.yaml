@@ -1,0 +1,17 @@
+# Tennis Stroke Detection Dataset
+path: /Users/sireeshanaroju/Desktop/Pilot-Tennis-Coach/Pilot-Tennis-Coach/services/ml-pipeline/training/datasets/tennis_stroke_detection
+train: train/images
+val: valid/images
+test: test/images
+
+# Classes (11 stroke/pose classes)
+nc: 11
+names: ['backhand-finish', 'backhand-ready', 'backhand-stroke', 'forehand-finish', 'forehand-ready', 'forehand-stroke', 'ready-position', 'serve_followthrough', 'serve_hit', 'serve_ready', 'serve_toss']
+
+# Roboflow metadata
+roboflow:
+  workspace: anshs-playground
+  project: tennis-annotations
+  version: 3
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/anshs-playground/tennis-annotations/dataset/3
