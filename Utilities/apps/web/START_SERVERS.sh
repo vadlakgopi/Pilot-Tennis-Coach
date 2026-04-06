@@ -4,29 +4,28 @@
 
 echo "🎾 Starting Tennis Analytics Platform..."
 
+SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 # Check if virtual environment exists
-if [ ! -d "apps/api/venv" ]; then
+if [ ! -d "$SCRIPT_DIR/apps/api/venv" ]; then
     echo "❌ Backend virtual environment not found. Please run setup first."
     exit 1
 fi
 
 # Start API server in background
 echo "🚀 Starting API server on http://localhost:8000"
-cd apps/api
+cd "$SCRIPT_DIR/apps/api"
 source venv/bin/activate
 uvicorn main:app --reload --port 8000 &
 API_PID=$!
-cd ../..
 
 # Wait a moment for API to start
 sleep 3
 
 # Start web dashboard
 echo "🌐 Starting web dashboard on http://localhost:3000"
-cd apps/web
+cd "$SCRIPT_DIR/apps/web"
 npm run dev &
 WEB_PID=$!
-cd ../..
 
 echo ""
 echo "✅ Services started!"

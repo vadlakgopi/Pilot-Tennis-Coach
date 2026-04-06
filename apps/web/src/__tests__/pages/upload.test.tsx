@@ -17,6 +17,26 @@ jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
 }))
 
+jest.mock('@tanstack/react-query', () => ({
+  useMutation: jest.fn(() => ({
+    mutate: jest.fn(),
+    mutateAsync: jest.fn(),
+    isPending: false,
+    isSuccess: false,
+    isError: false,
+  })),
+}))
+
+jest.mock('@/components/auth/AuthGuard', () => {
+  return function MockAuthGuard({ children }: { children: React.ReactNode }) {
+    return <>{children}</>
+  }
+})
+
+// Mock URL.createObjectURL for file preview (not available in jsdom)
+global.URL.createObjectURL = jest.fn(() => 'blob:mock-url')
+global.URL.revokeObjectURL = jest.fn()
+
 const mockRouter = {
   push: jest.fn(),
   replace: jest.fn(),
@@ -32,7 +52,7 @@ describe('UploadPage', () => {
   it('renders upload form', () => {
     render(<UploadPage />)
     expect(screen.getByText('Upload Match Video')).toBeInTheDocument()
-    expect(screen.getByLabelText(/Match Title/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/e.g., Practice Match/i)).toBeInTheDocument()
   })
 
   it('validates required fields', async () => {
@@ -46,14 +66,12 @@ describe('UploadPage', () => {
   })
 
   it('handles file selection', () => {
-    render(<UploadPage />)
+    const { container } = render(<UploadPage />)
     const file = new File(['test'], 'test.mp4', { type: 'video/mp4' })
-    const input = screen.getByLabelText(/Video File/i).querySelector('input[type="file"]')
-    
-    if (input) {
-      fireEvent.change(input, { target: { files: [file] } })
-      expect(screen.getByText('test.mp4')).toBeInTheDocument()
-    }
+    const input = container.querySelector('input[type="file"]')
+    expect(input).toBeTruthy()
+    fireEvent.change(input!, { target: { files: [file] } })
+    expect(screen.getByText('test.mp4')).toBeInTheDocument()
   })
 })
 

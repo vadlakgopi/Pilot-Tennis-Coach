@@ -9,8 +9,9 @@ from pathlib import Path
 import random
 from datetime import datetime, timezone
 
-# Add the API directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'apps', 'api'))
+# Add the API directory to the path (one level up from Utilities/scripts)
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(project_root, 'apps', 'api'))
 
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc

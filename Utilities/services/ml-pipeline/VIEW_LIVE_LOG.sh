@@ -1,7 +1,8 @@
 #!/bin/bash
 # Script to view live analytics processing log
 
-LOG_FILE="services/ml-pipeline/analytics_live.log"
+SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+LOG_FILE="$SCRIPT_DIR/services/ml-pipeline/analytics_live.log"
 
 if [ ! -f "$LOG_FILE" ]; then
     echo "Log file not found: $LOG_FILE"

@@ -2,7 +2,7 @@
 
 # Start API server with correct environment variables
 
-cd "$(dirname "$0")/apps/api"
+cd "$(dirname "$0")/../../apps/api"
 
 # Load environment variables
 export DATABASE_URL="postgresql://sireeshanaroju@localhost:5432/tennis_analytics"

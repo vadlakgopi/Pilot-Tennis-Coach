@@ -1,35 +1,34 @@
 #!/usr/bin/env python3
 """
-Simple script to trigger ML pipeline processing for the latest match.
+Script to trigger ML pipeline processing for a specific match.
 """
 import os
 import sys
 import asyncio
 import httpx
 
-# Set up paths - add API directory to path
-project_root = os.path.dirname(os.path.abspath(__file__))
+# Set up paths - add API directory to path (one level up from Utilities/scripts)
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 api_path = os.path.join(project_root, 'apps', 'api')
 sys.path.insert(0, api_path)
 
 # Now import
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import desc
 from app.core.database import SessionLocal
 from app.models.match import Match, MatchVideo
 from app.core.config import settings
 
-async def trigger_ml_pipeline():
-    """Find latest match and trigger ML pipeline processing"""
+async def trigger_ml_pipeline(match_id: int):
+    """Find match and trigger ML pipeline processing"""
     db: Session = SessionLocal()
     
     try:
-        print("🔍 Finding latest match with video...")
+        print(f"🔍 Finding match #{match_id}...")
         
-        match = db.query(Match).options(joinedload(Match.videos)).order_by(desc(Match.id)).first()
+        match = db.query(Match).options(joinedload(Match.videos)).filter(Match.id == match_id).first()
         
         if not match:
-            print("❌ No matches found.")
+            print(f"❌ Match #{match_id} not found.")
             return False
         
         print(f"Match ID: {match.id}, Title: {match.title}")
@@ -104,5 +103,16 @@ async def trigger_ml_pipeline():
         db.close()
 
 if __name__ == "__main__":
-    success = asyncio.run(trigger_ml_pipeline())
+    import sys
+    match_id = int(sys.argv[1]) if len(sys.argv) > 1 else None
+    if not match_id:
+        print("Usage: python trigger_ml_for_match.py <match_id>")
+        sys.exit(1)
+    
+    success = asyncio.run(trigger_ml_pipeline(match_id))
     sys.exit(0 if success else 1)
+
+
+
+
+

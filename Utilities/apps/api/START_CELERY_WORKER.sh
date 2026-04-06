@@ -5,13 +5,14 @@
 echo "⚙️  Starting Celery Worker..."
 
 # Check if virtual environment exists
-if [ ! -d "apps/api/venv" ]; then
+SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+if [ ! -d "$SCRIPT_DIR/apps/api/venv" ]; then
     echo "❌ Backend virtual environment not found. Please run setup first."
     exit 1
 fi
 
 # Activate virtual environment
-cd apps/api
+cd "$SCRIPT_DIR/apps/api"
 source venv/bin/activate
 
 # Check if Redis is running
@@ -38,8 +39,6 @@ echo "   This will process video analysis tasks asynchronously"
 echo ""
 
 celery -A app.core.celery_app worker --loglevel=info
-
-cd ../..
 
 
 

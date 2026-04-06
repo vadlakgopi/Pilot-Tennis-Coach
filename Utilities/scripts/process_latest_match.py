@@ -6,8 +6,9 @@ import os
 import sys
 from pathlib import Path
 
-# Add the API directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'apps', 'api'))
+# Add the API directory to the path (one level up from Utilities/scripts)
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(project_root, 'apps', 'api'))
 
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc
@@ -48,7 +49,7 @@ def process_latest_match():
         # Check if video file exists
         if video_path.startswith('./data/'):
             # Local path - make it absolute
-            abs_path = os.path.join(os.path.dirname(__file__), 'apps', 'api', video_path.lstrip('./'))
+            abs_path = os.path.join(project_root, 'apps', 'api', video_path.lstrip('./'))
         else:
             abs_path = video_path
         

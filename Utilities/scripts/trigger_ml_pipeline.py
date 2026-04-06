@@ -8,8 +8,9 @@ import sys
 import asyncio
 import httpx
 
-# Add the API directory to the path
-api_path = os.path.join(os.path.dirname(__file__), 'apps', 'api')
+# Get project root (one level up from Utilities/scripts)
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+api_path = os.path.join(project_root, 'apps', 'api')
 sys.path.insert(0, api_path)
 
 # Change to API directory to use its venv
@@ -22,7 +23,7 @@ from app.models.match import Match, MatchVideo
 from app.core.config import settings
 
 # Change back to project root
-os.chdir(os.path.dirname(__file__))
+os.chdir(project_root)
 
 async def trigger_ml_pipeline():
     """Find latest match and trigger ML pipeline processing"""
@@ -56,7 +57,7 @@ async def trigger_ml_pipeline():
         
         # Resolve absolute path
         if video_path.startswith('./data/'):
-            abs_path = os.path.join(os.path.dirname(__file__), 'apps', 'api', video_path.lstrip('./'))
+            abs_path = os.path.join(project_root, 'apps', 'api', video_path.lstrip('./'))
         else:
             abs_path = video_path
         

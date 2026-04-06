@@ -10,8 +10,8 @@ load_dotenv()
 
 
 class Settings(BaseSettings):
-    # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/tennis_analytics")
+    # Database - default SQLite for local dev; use PostgreSQL for full features
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./tennis_dev.db")
     POSTGRES_USER: str = os.getenv("POSTGRES_USER", "user")
     POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "password")
     POSTGRES_DB: str = os.getenv("POSTGRES_DB", "tennis_analytics")
@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     # API
     API_URL: str = os.getenv("API_URL", "http://localhost:8000")
     API_VERSION: str = os.getenv("API_VERSION", "v1")
-    CORS_ORIGINS: List[str] = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:19006,http://192.168.4.20:19006").split(",")
+    CORS_ORIGINS: List[str] = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:19006,http://192.168.4.20:19006,http://127.0.0.1:3000").split(",")
     
     # Video Processing
     MAX_VIDEO_SIZE_MB: int = int(os.getenv("MAX_VIDEO_SIZE_MB", "500"))

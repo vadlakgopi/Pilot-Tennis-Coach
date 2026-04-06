@@ -39,10 +39,17 @@ jest.mock('@/components/match/EstimatedTimeModal', () => {
   }
 })
 
-// Mock React Query
+// Mock React Query - handle both matches list and MatchTile's analytics query
 jest.mock('@tanstack/react-query', () => ({
   useQuery: jest.fn(),
 }))
+
+// Mock AuthGuard to render children directly (avoids auth flow in tests)
+jest.mock('@/components/auth/AuthGuard', () => {
+  return function MockAuthGuard({ children }: { children: React.ReactNode }) {
+    return <>{children}</>
+  }
+})
 
 const { useQuery } = require('@tanstack/react-query')
 
@@ -83,7 +90,7 @@ describe('MatchesPage', () => {
 
     render(<MatchesPage />)
     expect(screen.getByText('No matches yet')).toBeInTheDocument()
-    expect(screen.getByText(/Upload your first match/i)).toBeInTheDocument()
+    expect(screen.getByText(/Upload your first match video to get started/i)).toBeInTheDocument()
   })
 
   it('renders matches list', () => {
@@ -94,15 +101,23 @@ describe('MatchesPage', () => {
         match_type: 'singles',
         player1_name: 'Player 1',
         player2_name: 'Player 2',
-        status: 'completed',
+        status: 'processing', // Use processing so MatchTile skips analytics fetch
         created_at: '2024-01-01T00:00:00Z',
+        processing_progress: 0.5,
       },
     ]
 
-    useQuery.mockReturnValue({
-      data: mockMatches,
-      isLoading: false,
-      error: null,
+    // useQuery is called for matches list and for each MatchTile (analytics when completed)
+    useQuery.mockImplementation((options: { queryKey?: unknown[]; enabled?: boolean }) => {
+      const key = options?.queryKey
+      const isMatchStats = Array.isArray(key) && key[0] === 'matchStatsPreview'
+      return {
+        data: isMatchStats
+          ? { total_rallies: 10, player1_stats: { points_won: 5 }, player2_stats: { points_won: 5 }, longest_rally: 7 }
+          : mockMatches,
+        isLoading: false,
+        error: null,
+      }
     })
 
     render(<MatchesPage />)
@@ -111,6 +126,8 @@ describe('MatchesPage', () => {
     expect(screen.getByText('Player 2')).toBeInTheDocument()
   })
 })
+
+
 
 
 

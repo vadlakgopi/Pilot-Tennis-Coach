@@ -8,8 +8,8 @@ import sys
 import subprocess
 from pathlib import Path
 
-# Add API path to sys.path
-project_root = Path(__file__).parent
+# Add API path to sys.path (one level up from Utilities/scripts)
+project_root = Path(__file__).parent.parent
 api_path = project_root / 'apps' / 'api'
 sys.path.insert(0, str(api_path))
 

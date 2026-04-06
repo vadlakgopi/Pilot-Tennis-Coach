@@ -15,9 +15,12 @@ export default function VideoModal({ isOpen, onClose, videoUrl, title }: VideoMo
 
   useEffect(() => {
     if (isOpen && videoRef.current) {
-      videoRef.current.play().catch(() => {
-        // Autoplay may be blocked, that's okay
-      })
+      const playPromise = videoRef.current.play()
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {
+          // Autoplay may be blocked, that's okay
+        })
+      }
     }
   }, [isOpen])
 

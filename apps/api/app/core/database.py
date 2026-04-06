@@ -7,12 +7,17 @@ from app.core.config import settings
 
 # Create engine with connection pooling
 try:
+    connect_args = {}
+    if "postgresql" in settings.DATABASE_URL:
+        connect_args = {"connect_timeout": 5}
+    elif "sqlite" in settings.DATABASE_URL:
+        connect_args = {"check_same_thread": False}
     engine = create_engine(
         settings.DATABASE_URL,
         pool_pre_ping=True,
-        pool_size=10,
-        max_overflow=20,
-        connect_args={"connect_timeout": 5} if "postgresql" in settings.DATABASE_URL else {}
+        pool_size=10 if "postgresql" in settings.DATABASE_URL else 1,
+        max_overflow=20 if "postgresql" in settings.DATABASE_URL else 0,
+        connect_args=connect_args,
     )
 except Exception as e:
     print(f"Warning: Could not create database engine: {e}")

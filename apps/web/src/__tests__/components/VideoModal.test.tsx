@@ -4,6 +4,11 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import VideoModal from '@/components/match/VideoModal'
 
+// Mock HTMLMediaElement.play() for jsdom (not implemented)
+beforeAll(() => {
+  HTMLMediaElement.prototype.play = jest.fn(() => Promise.resolve())
+})
+
 describe('VideoModal', () => {
   const mockOnClose = jest.fn()
   const defaultProps = {
@@ -19,24 +24,24 @@ describe('VideoModal', () => {
 
   it('renders when open', () => {
     render(<VideoModal {...defaultProps} />)
-    expect(screen.getByTitle('Test Video')).toBeInTheDocument()
+    expect(screen.getByText('Test Video')).toBeInTheDocument()
   })
 
   it('does not render when closed', () => {
     render(<VideoModal {...defaultProps} isOpen={false} />)
-    expect(screen.queryByTitle('Test Video')).not.toBeInTheDocument()
+    expect(screen.queryByText('Test Video')).not.toBeInTheDocument()
   })
 
   it('calls onClose when close button is clicked', () => {
     render(<VideoModal {...defaultProps} />)
-    const closeButton = screen.getByLabelText('Close video')
+    const closeButton = screen.getByLabelText('Close')
     fireEvent.click(closeButton)
     expect(mockOnClose).toHaveBeenCalledTimes(1)
   })
 
   it('renders video element with correct source', () => {
-    render(<VideoModal {...defaultProps} />)
-    const video = screen.getByTitle('Test Video')
+    const { container } = render(<VideoModal {...defaultProps} />)
+    const video = container.querySelector('video')
     expect(video).toHaveAttribute('src', 'https://example.com/video.mp4')
   })
 })

@@ -2,14 +2,30 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import UserDropdown from './UserDropdown'
+import LoginDropdown from './LoginDropdown'
 
 export default function Navbar() {
   const pathname = usePathname()
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const checkAuth = () => {
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('auth_token')
+        setIsAuthenticated(!!token)
+      }
+    }
+    checkAuth()
+    // Also listen for storage changes (e.g., when user logs in/out)
+    window.addEventListener('storage', checkAuth)
+    return () => window.removeEventListener('storage', checkAuth)
+  }, [pathname])
 
   const navItems = [
     { href: '/', label: 'Home', icon: '🏠' },
     { href: '/matches', label: 'Matches', icon: '🎾' },
-    { href: '/upload', label: 'Upload', icon: '📤' },
   ]
 
   return (
@@ -24,7 +40,8 @@ export default function Navbar() {
           </Link>
 
           <div className="flex items-center space-x-1">
-            {navItems.map((item) => {
+            {/* Hide nav items on login page */}
+            {pathname !== '/login' && navItems.map((item) => {
               const isActive = pathname === item.href
               return (
                 <Link
@@ -41,6 +58,10 @@ export default function Navbar() {
                 </Link>
               )
             })}
+            {/* Show LoginDropdown when not authenticated, UserDropdown when authenticated */}
+            <div className={pathname !== '/login' ? 'ml-4 pl-4 border-l border-gray-200' : ''}>
+              {isAuthenticated ? <UserDropdown /> : <LoginDropdown />}
+            </div>
           </div>
         </div>
       </div>

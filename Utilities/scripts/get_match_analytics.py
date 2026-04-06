@@ -5,8 +5,8 @@ Get analytics and highlights for a specific match
 import os
 import sys
 
-# Set up paths
-project_root = os.path.dirname(os.path.abspath(__file__))
+# Set up paths (one level up from Utilities/scripts)
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 api_path = os.path.join(project_root, 'apps', 'api')
 sys.path.insert(0, api_path)
 

@@ -9,6 +9,7 @@ import StatusExplanation from '@/components/match/StatusExplanation'
 import MatchTile from '@/components/match/MatchTile'
 // import VideoPreviewModal from '@/components/match/VideoPreviewModal' // Disabled for now
 import Breadcrumbs from '@/components/layout/Breadcrumbs'
+import AuthGuard from '@/components/auth/AuthGuard'
 
 export default function MatchesPage() {
   // const [previewMatchId, setPreviewMatchId] = useState<number | null>(null) // Disabled for now
@@ -92,10 +93,11 @@ export default function MatchesPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Matches' }]} />
-      
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+    <AuthGuard>
+      <div className="container mx-auto px-4 py-4 h-[calc(100vh-8rem)] flex flex-col">
+        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Matches' }]} />
+        
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3 flex-shrink-0">
         <div>
           <h1 className="text-3xl font-black text-gray-900 mb-1 flex items-center gap-2">
             <span className="text-3xl">🎾</span>
@@ -148,7 +150,7 @@ export default function MatchesPage() {
           </Link>
         </div>
       ) : (
-        <div className={`grid grid-cols-1 ${matches.length <= 3 ? 'md:grid-cols-2 lg:grid-cols-3' : 'md:grid-cols-2 lg:grid-cols-4'} gap-4 max-h-[calc(100vh-200px)] ${matches.length > 4 ? 'overflow-y-auto' : ''}`}>
+        <div className={`grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 flex-1 overflow-y-auto pr-2`}>
           {matches.map((match: any) => (
             <MatchTile
               key={match.id}
@@ -168,7 +170,8 @@ export default function MatchesPage() {
           onClose={() => setPreviewMatchId(null)}
         />
       )} */}
-    </div>
+      </div>
+    </AuthGuard>
   )
 }
 

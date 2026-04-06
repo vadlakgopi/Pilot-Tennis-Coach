@@ -31,8 +31,12 @@
   * {
     @apply border-border;
   }
+  html {
+    color-scheme: light;
+  }
   body {
-    @apply bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 text-foreground;
+    @apply bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50;
+    color: hsl(222.2 84% 4.9%);
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
@@ -71,3 +75,13 @@
   animation: fadeIn 0.5s ease-out;
 }
 
+/* Login page: show form when #login-form is in URL (no JavaScript needed) */
+.login-toggle #login-form {
+  display: none;
+}
+.login-toggle #login-form:target {
+  display: block;
+}
+.login-toggle #login-form:target ~ #get-started {
+  display: none !important;
+}

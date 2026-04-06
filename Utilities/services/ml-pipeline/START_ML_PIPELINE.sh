@@ -4,16 +4,16 @@
 
 echo "🤖 Starting ML Pipeline Service..."
 
+SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 # Check if virtual environment exists
-if [ ! -d "services/ml-pipeline/venv" ]; then
+if [ ! -d "$SCRIPT_DIR/services/ml-pipeline/venv" ]; then
     echo "📦 Creating virtual environment for ML Pipeline..."
-    cd services/ml-pipeline
+    cd "$SCRIPT_DIR/services/ml-pipeline"
     python3 -m venv venv
-    cd ../..
 fi
 
 # Activate virtual environment and install dependencies if needed
-cd services/ml-pipeline
+cd "$SCRIPT_DIR/services/ml-pipeline"
 source venv/bin/activate
 
 # Check if requirements are installed
@@ -28,8 +28,6 @@ echo "   Health check: http://localhost:8001/health"
 echo ""
 
 python main.py
-
-cd ../..
 
 
 

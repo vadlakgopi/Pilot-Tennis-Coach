@@ -21,22 +21,22 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Handle response errors
+// Handle response errors - skip redirect for auth/me (AuthGuard handles it) to prevent redirect loops
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle 401 Unauthorized - redirect to login
-    if (error.response?.status === 401) {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('auth_token')
-        window.location.href = '/login'
-      }
+    const isAuthCheck = error.config?.url?.includes('auth/me')
+    if (error.response?.status === 401 && !isAuthCheck && typeof window !== 'undefined') {
+      localStorage.removeItem('auth_token')
+      window.location.href = '/login'
     }
     return Promise.reject(error)
   }
 )
 
-// Auth API
+// Auth API - uses longer timeout for login (cold start, slow networks)
+const AUTH_TIMEOUT_MS = 30000 // 30 seconds for auth (vs 10s default)
+
 export const authApi = {
   login: async (username: string, password: string) => {
     const formData = new FormData()
@@ -44,7 +44,16 @@ export const authApi = {
     formData.append('password', password)
     const response = await api.post('/auth/login', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: AUTH_TIMEOUT_MS,
     })
+    if (response.status >= 400) {
+      const error = new Error(response.data?.detail || 'Login failed')
+      ;(error as any).response = response
+      throw error
+    }
+    if (!response.data?.access_token) {
+      throw new Error('Invalid login response')
+    }
     return response.data
   },
   register: async (data: { email: string; username: string; password: string }) => {
@@ -52,7 +61,24 @@ export const authApi = {
     return response.data
   },
   getCurrentUser: async () => {
-    const response = await api.get('/auth/me')
+    const response = await api.get('/auth/me', { timeout: AUTH_TIMEOUT_MS })
+    if (response.status >= 400) {
+      const err = new Error(response.data?.detail || 'Token invalid')
+      ;(err as any).response = response
+      throw err
+    }
+    return response.data
+  },
+}
+
+// Users API
+export const usersApi = {
+  getProfile: async () => {
+    const response = await api.get('/users/me')
+    return response.data
+  },
+  updateProfile: async (data: { email?: string; username?: string }) => {
+    const response = await api.put('/users/me', data)
     return response.data
   },
 }

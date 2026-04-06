@@ -6,6 +6,7 @@ import { useMutation } from '@tanstack/react-query'
 import { matchesApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import Breadcrumbs from '@/components/layout/Breadcrumbs'
+import AuthGuard from '@/components/auth/AuthGuard'
 
 type UploadStage = 'idle' | 'creating' | 'uploading' | 'completed' | 'error'
 
@@ -172,21 +173,23 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-4xl">
-      <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Upload Match' }]} />
-      
-      <div className="text-center mb-6">
-        <h1 className="text-3xl font-black text-gray-900 mb-2 flex items-center justify-center gap-2">
-          <span className="text-3xl">📤</span>
-          Upload Match Video
-        </h1>
-        <p className="text-sm text-gray-600">
-          Upload your tennis match video for instant AI-powered analytics
-        </p>
-      </div>
+    <AuthGuard>
+      <div className="container mx-auto px-4 py-4 max-w-4xl h-[calc(100vh-8rem)] flex flex-col overflow-hidden">
+        <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Upload Match' }]} />
+        
+        <div className="text-center mb-4 flex-shrink-0">
+          <h1 className="text-3xl font-black text-gray-900 mb-2 flex items-center justify-center gap-2">
+            <span className="text-3xl">📤</span>
+            Upload Match Video
+          </h1>
+          <p className="text-sm text-gray-600">
+            Upload your tennis match video for instant AI-powered analytics
+          </p>
+        </div>
 
-      <div className="bg-gradient-to-br from-white to-green-50 rounded-xl shadow-xl border-2 border-green-200 p-6">
-        {/* Error Display with Retry */}
+        <div className="flex-1 overflow-y-auto pr-2">
+          <div className="bg-gradient-to-br from-white to-green-50 rounded-xl shadow-xl border-2 border-green-200 p-6">
+            {/* Error Display with Retry */}
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex items-start justify-between">
@@ -463,21 +466,23 @@ export default function UploadPage() {
             </Button>
           </div>
         </form>
-      </div>
 
-      {/* Info Box */}
-      <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h3 className="font-semibold text-blue-900 mb-2 flex items-center">
-          <span className="mr-2">ℹ️</span>
-          What happens next?
-        </h3>
-        <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-          <li>Your video will be uploaded and queued for processing</li>
-          <li>AI will analyze shots, serves, and rallies</li>
-          <li>You'll receive detailed analytics and insights</li>
-          <li>Processing typically takes 2-5 minutes after upload completes</li>
-        </ul>
+            {/* Info Box */}
+            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <h3 className="font-semibold text-blue-900 mb-2 flex items-center">
+                <span className="mr-2">ℹ️</span>
+                What happens next?
+              </h3>
+              <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                <li>Your video will be uploaded and queued for processing</li>
+                <li>AI will analyze shots, serves, and rallies</li>
+                <li>You'll receive detailed analytics and insights</li>
+                <li>Processing typically takes 2-5 minutes after upload completes</li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </AuthGuard>
   )
 }
