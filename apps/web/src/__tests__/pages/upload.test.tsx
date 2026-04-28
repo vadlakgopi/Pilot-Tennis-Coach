@@ -27,12 +27,6 @@ jest.mock('@tanstack/react-query', () => ({
   })),
 }))
 
-jest.mock('@/components/auth/AuthGuard', () => {
-  return function MockAuthGuard({ children }: { children: React.ReactNode }) {
-    return <>{children}</>
-  }
-})
-
 // Mock URL.createObjectURL for file preview (not available in jsdom)
 global.URL.createObjectURL = jest.fn(() => 'blob:mock-url')
 global.URL.revokeObjectURL = jest.fn()

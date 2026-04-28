@@ -15,8 +15,18 @@ import AuthGuard from '@/components/auth/AuthGuard'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
 
 export default function MatchDetailPage() {
+  return (
+    <AuthGuard>
+      <MatchDetailContent />
+    </AuthGuard>
+  )
+}
+
+function MatchDetailContent() {
   const params = useParams()
-  const matchId = Number(params?.id)
+  const rawId = params?.id
+  const idStr = Array.isArray(rawId) ? rawId[0] : rawId
+  const matchId = idStr != null && String(idStr).trim() !== '' ? Number(idStr) : NaN
   const queryClient = useQueryClient()
   const [videoModal, setVideoModal] = useState<{ isOpen: boolean; url: string; title: string }>({
     isOpen: false,
@@ -81,6 +91,7 @@ export default function MatchDetailPage() {
   }
 
   const getStatusBadge = (status: string) => {
+    const key = (status || '').toLowerCase()
     const styles = {
       completed: 'bg-green-100 text-green-800 border-green-200',
       processing: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -88,10 +99,11 @@ export default function MatchDetailPage() {
       uploading: 'bg-purple-100 text-purple-800 border-purple-200',
       failed: 'bg-red-100 text-red-800 border-red-200',
     }
-    return styles[status.toLowerCase() as keyof typeof styles] || 'bg-gray-100 text-gray-800 border-gray-200'
+    return styles[key as keyof typeof styles] || 'bg-gray-100 text-gray-800 border-gray-200'
   }
 
   const getStatusLabel = (status: string) => {
+    const key = (status || '').toLowerCase()
     const labels: Record<string, string> = {
       completed: 'Ready',
       analyzing: 'Analyzing',
@@ -99,12 +111,12 @@ export default function MatchDetailPage() {
       processing: 'Processing',
       failed: 'Failed',
     }
-    return labels[status.toLowerCase()] || status.charAt(0).toUpperCase() + status.slice(1)
+    if (!key) return 'Unknown'
+    return labels[key] || status.charAt(0).toUpperCase() + status.slice(1)
   }
 
   if (Number.isNaN(matchId)) {
     return (
-      <AuthGuard>
         <div className="container mx-auto px-4 py-4 h-[calc(100vh-8rem)] flex items-center justify-center">
           <div className="max-w-md mx-auto text-center bg-red-50 border border-red-200 rounded-lg p-6">
             <div className="text-4xl mb-4">❌</div>
@@ -114,26 +126,22 @@ export default function MatchDetailPage() {
             </Link>
           </div>
         </div>
-      </AuthGuard>
     )
   }
 
   if (isLoading) {
     return (
-      <AuthGuard>
         <div className="container mx-auto px-4 py-4 h-[calc(100vh-8rem)] flex items-center justify-center">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4" />
             <p className="text-gray-600">Loading match details...</p>
           </div>
         </div>
-      </AuthGuard>
     )
   }
 
   if (error || !match) {
     return (
-      <AuthGuard>
         <div className="container mx-auto px-4 py-4 h-[calc(100vh-8rem)] flex items-center justify-center">
           <div className="max-w-md mx-auto text-center bg-red-50 border border-red-200 rounded-lg p-6">
             <div className="text-4xl mb-4">⚠️</div>
@@ -144,12 +152,11 @@ export default function MatchDetailPage() {
             </Link>
           </div>
         </div>
-      </AuthGuard>
     )
   }
 
   return (
-    <AuthGuard>
+    <>
       <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <div className="container mx-auto px-6 py-6">
           <div className="flex-shrink-0 mb-4">
@@ -193,7 +200,7 @@ export default function MatchDetailPage() {
                           ? 'bg-red-500 text-white'
                           : 'bg-blue-500 text-white'
                       }`}>
-                        {getStatusLabel(match.status)}
+                        {getStatusLabel(match.status || '')}
                       </span>
                       <div className="text-white/90">
                         <StatusExplanation />
@@ -431,15 +438,14 @@ export default function MatchDetailPage() {
           </div>
         </div>
       </div>
-      
-      {/* Video Modal */}
+
       <VideoModal
         isOpen={videoModal.isOpen}
         onClose={() => setVideoModal({ isOpen: false, url: '', title: '' })}
         videoUrl={videoModal.url}
         title={videoModal.title}
       />
-    </AuthGuard>
+    </>
   )
 }
 

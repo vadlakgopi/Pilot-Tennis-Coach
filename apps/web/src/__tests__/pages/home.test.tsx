@@ -6,7 +6,6 @@ import { render, screen, waitFor } from '@testing-library/react'
 import Home from '@/app/page'
 import { useRouter } from 'next/navigation'
 import { usersApi, matchesApi } from '@/lib/api'
-import { authApi } from '@/lib/api'
 
 // Mock next/navigation
 const mockReplace = jest.fn()
@@ -19,9 +18,6 @@ jest.mock('next/navigation', () => ({
 
 // Mock API
 jest.mock('@/lib/api', () => ({
-  authApi: {
-    getCurrentUser: jest.fn(),
-  },
   usersApi: {
     getProfile: jest.fn(),
   },
@@ -35,13 +31,6 @@ jest.mock('@tanstack/react-query', () => ({
   useQuery: jest.fn(),
 }))
 
-// Mock AuthGuard to always allow (we're testing the page, not auth in this test)
-jest.mock('@/components/auth/AuthGuard', () => {
-  return function AuthGuard({ children }: { children: React.ReactNode }) {
-    return <>{children}</>
-  }
-})
-
 // Mock UI components
 jest.mock('@/components/ui/button', () => ({
   Button: ({ children, ...props }: any) => (
@@ -54,6 +43,7 @@ const { useQuery } = require('@tanstack/react-query')
 describe('Home Page', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    localStorage.setItem('auth_token', 'test-token')
     ;(useRouter as jest.Mock).mockReturnValue({
       replace: mockReplace,
       push: jest.fn(),
@@ -62,7 +52,11 @@ describe('Home Page', () => {
     })
   })
 
-  it('renders home page content when authenticated', () => {
+  afterEach(() => {
+    localStorage.removeItem('auth_token')
+  })
+
+  it('renders home page content when authenticated', async () => {
     const mockUser = {
       id: 1,
       username: 'testuser',
@@ -89,11 +83,13 @@ describe('Home Page', () => {
 
     render(<Home />)
 
-    expect(screen.getByText('Welcome Back!')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('Welcome Back!')).toBeInTheDocument()
+    })
     expect(screen.getByText('testuser')).toBeInTheDocument()
   })
 
-  it('shows loading state while fetching user data', () => {
+  it('shows loading state while fetching user data', async () => {
     ;(useQuery as jest.Mock).mockImplementation(({ queryKey }) => {
       if (queryKey[0] === 'currentUser') {
         return {
@@ -112,12 +108,13 @@ describe('Home Page', () => {
 
     render(<Home />)
 
-    // Should show loading spinner (check for animate-spin class)
-    const spinner = document.querySelector('.animate-spin')
-    expect(spinner).toBeInTheDocument()
+    await waitFor(() => {
+      const spinner = document.querySelector('.animate-spin')
+      expect(spinner).toBeInTheDocument()
+    })
   })
 
-  it('renders matches statistics when matches are loaded', () => {
+  it('renders matches statistics when matches are loaded', async () => {
     const mockUser = {
       id: 1,
       username: 'testuser',
@@ -148,11 +145,13 @@ describe('Home Page', () => {
 
     render(<Home />)
 
-    expect(screen.getByText('Matches Uploaded')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('Matches Uploaded')).toBeInTheDocument()
+    })
     expect(screen.getByText('Matches Analyzed')).toBeInTheDocument()
   })
 
-  it('renders feature cards', () => {
+  it('renders feature cards', async () => {
     const mockUser = {
       id: 1,
       username: 'testuser',
@@ -179,7 +178,9 @@ describe('Home Page', () => {
 
     render(<Home />)
 
-    expect(screen.getByText('Shot Analysis')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('Shot Analysis')).toBeInTheDocument()
+    })
     expect(screen.getByText('Match Statistics')).toBeInTheDocument()
     expect(screen.getByText('Serve Analytics')).toBeInTheDocument()
     expect(screen.getByText('Heatmaps')).toBeInTheDocument()

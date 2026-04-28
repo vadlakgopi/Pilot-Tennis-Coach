@@ -2,11 +2,11 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useMutation } from '@tanstack/react-query'
 import { matchesApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import Breadcrumbs from '@/components/layout/Breadcrumbs'
-import AuthGuard from '@/components/auth/AuthGuard'
 
 type UploadStage = 'idle' | 'creating' | 'uploading' | 'completed' | 'error'
 
@@ -42,7 +42,12 @@ export default function UploadPage() {
     },
     onError: (error: any) => {
       setUploadStage('error')
-      setError(error.response?.data?.detail || 'Failed to create match. Please try again.')
+      const st = error.response?.status
+      if (st === 401 || st === 403) {
+        setError('Please log in to upload matches.')
+      } else {
+        setError(error.response?.data?.detail || 'Failed to create match. Please try again.')
+      }
     },
   })
 
@@ -61,7 +66,12 @@ export default function UploadPage() {
     },
     onError: (error: any) => {
       setUploadStage('error')
-      setError(error.response?.data?.detail || 'Failed to upload video. Please try again.')
+      const st = error.response?.status
+      if (st === 401 || st === 403) {
+        setError('Please log in to upload videos.')
+      } else {
+        setError(error.response?.data?.detail || 'Failed to upload video. Please try again.')
+      }
     },
   })
 
@@ -173,7 +183,6 @@ export default function UploadPage() {
   }
 
   return (
-    <AuthGuard>
       <div className="container mx-auto px-4 py-4 max-w-4xl h-[calc(100vh-8rem)] flex flex-col overflow-hidden">
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Upload Match' }]} />
         
@@ -192,26 +201,39 @@ export default function UploadPage() {
             {/* Error Display with Retry */}
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
               <div className="flex items-start">
                 <span className="text-2xl mr-3">⚠️</span>
                 <div className="flex-1">
                   <p className="text-red-900 font-semibold">Upload Failed</p>
                   <p className="text-red-700 text-sm mt-1">{error}</p>
-                  {uploadStage === 'error' && (
+                  {(error.includes('log in') || error.includes('Please log in')) && (
+                    <Link href="/login" className="inline-block mt-3">
+                      <Button className="bg-blue-600 hover:bg-blue-700 text-white" size="sm">
+                        Go to Login
+                      </Button>
+                    </Link>
+                  )}
+                  {uploadStage === 'error' &&
+                    !error.includes('log in') &&
+                    !error.includes('Please log in') && (
                     <p className="text-red-600 text-xs mt-2">
-                      Don't worry - your match has been created and you can retry the upload.
+                      Don&apos;t worry - your match has been created and you can retry the upload.
                     </p>
                   )}
                 </div>
               </div>
-              <Button
-                onClick={handleRetry}
-                className="ml-4 bg-red-600 hover:bg-red-700 text-white"
-                size="sm"
-              >
-                Retry
-              </Button>
+              {uploadStage === 'error' &&
+                !error.includes('log in') &&
+                !error.includes('Please log in') && (
+                <Button
+                  onClick={handleRetry}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  size="sm"
+                >
+                  Retry
+                </Button>
+              )}
             </div>
           </div>
         )}
@@ -483,6 +505,5 @@ export default function UploadPage() {
           </div>
         </div>
       </div>
-    </AuthGuard>
   )
 }

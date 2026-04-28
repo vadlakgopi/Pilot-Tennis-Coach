@@ -1,22 +1,33 @@
 'use client'
 
 import Link from 'next/link'
+import { useLayoutEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import AuthGuard from '@/components/auth/AuthGuard'
 import { useQuery } from '@tanstack/react-query'
 import { usersApi, matchesApi } from '@/lib/api'
 
 export default function Home() {
+  const [hasToken, setHasToken] = useState(false)
+
+  useLayoutEffect(() => {
+    const sync = () => setHasToken(!!localStorage.getItem('auth_token'))
+    sync()
+    window.addEventListener('storage', sync)
+    return () => window.removeEventListener('storage', sync)
+  }, [])
+
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
     queryFn: usersApi.getProfile,
     staleTime: 5 * 60 * 1000,
+    enabled: hasToken,
   })
 
   const { data: matches, isLoading: matchesLoading } = useQuery({
     queryKey: ['matches'],
     queryFn: () => matchesApi.list(),
     staleTime: 2 * 60 * 1000,
+    enabled: hasToken,
   })
 
   // Calculate member since
@@ -86,16 +97,60 @@ export default function Home() {
   ]
 
   return (
-    <AuthGuard>
-      <div className="min-h-[calc(100vh-8rem)] overflow-y-auto bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        {/* Hero Section with Welcome and Stats */}
-        <section className="relative overflow-hidden">
-          {/* Decorative background elements */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-transparent to-purple-600/5"></div>
-          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-green-400/10 to-cyan-400/10 rounded-full blur-3xl"></div>
-          
-          <div className="relative container mx-auto px-6 py-12">
+    <div className="min-h-[calc(100vh-8rem)] overflow-y-auto bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Hero Section with Welcome and Stats */}
+      <section className="relative overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-transparent to-purple-600/5"></div>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-green-400/10 to-cyan-400/10 rounded-full blur-3xl"></div>
+
+        <div className="relative container mx-auto px-6 py-12">
+          {!hasToken ? (
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 shadow-xl border border-white/20 max-w-4xl mx-auto">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-3xl shadow-lg">
+                  🎾
+                </div>
+                <div>
+                  <h1 className="text-4xl font-black text-gray-900 mb-1">Tennis Buddy</h1>
+                  <p className="text-lg text-gray-600">AI-powered match analytics and coaching insights</p>
+                </div>
+              </div>
+              <p className="text-gray-700 mb-8 text-lg leading-relaxed">
+                Upload matches, explore stats, and improve your game — no extra wait on this page. Sign in when
+                you&apos;re ready for your personal dashboard.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/login">
+                  <Button
+                    size="lg"
+                    className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold px-8 py-6 text-base shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/matches">
+                  <Button
+                    size="lg"
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-8 py-6 text-base shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    <span className="mr-2 text-xl">🎾</span>
+                    View Matches
+                  </Button>
+                </Link>
+                <Link href="/upload">
+                  <Button
+                    size="lg"
+                    className="bg-white border-2 border-green-600 text-green-700 hover:bg-green-50 font-bold px-8 py-6 text-base shadow-md hover:shadow-lg transition-all duration-300"
+                  >
+                    <span className="mr-2 text-xl">📤</span>
+                    Upload Match
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Welcome Section - Takes 2 columns */}
               <div className="lg:col-span-2">
@@ -189,8 +244,9 @@ export default function Home() {
                 )}
               </div>
             </div>
-          </div>
-        </section>
+          )}
+        </div>
+      </section>
 
         {/* Features Section */}
         <section className="relative container mx-auto px-6 py-12">
@@ -225,8 +281,7 @@ export default function Home() {
 
         {/* Bottom spacing */}
         <div className="h-12"></div>
-      </div>
-    </AuthGuard>
+    </div>
   )
 }
 

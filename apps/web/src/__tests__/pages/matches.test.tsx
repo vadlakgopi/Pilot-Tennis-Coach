@@ -44,13 +44,6 @@ jest.mock('@tanstack/react-query', () => ({
   useQuery: jest.fn(),
 }))
 
-// Mock AuthGuard to render children directly (avoids auth flow in tests)
-jest.mock('@/components/auth/AuthGuard', () => {
-  return function MockAuthGuard({ children }: { children: React.ReactNode }) {
-    return <>{children}</>
-  }
-})
-
 const { useQuery } = require('@tanstack/react-query')
 
 describe('MatchesPage', () => {

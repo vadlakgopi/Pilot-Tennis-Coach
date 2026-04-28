@@ -9,7 +9,6 @@ import StatusExplanation from '@/components/match/StatusExplanation'
 import MatchTile from '@/components/match/MatchTile'
 // import VideoPreviewModal from '@/components/match/VideoPreviewModal' // Disabled for now
 import Breadcrumbs from '@/components/layout/Breadcrumbs'
-import AuthGuard from '@/components/auth/AuthGuard'
 
 export default function MatchesPage() {
   // const [previewMatchId, setPreviewMatchId] = useState<number | null>(null) // Disabled for now
@@ -68,7 +67,13 @@ export default function MatchesPage() {
 
   if (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    const isAuthError = errorMessage.includes('401') || errorMessage.includes('Unauthorized')
+    const errObj = error as Error & { response?: { status?: number } }
+    const isAuthError =
+      errorMessage.includes('401') ||
+      errorMessage.includes('Unauthorized') ||
+      errorMessage.includes('403') ||
+      errObj.response?.status === 401 ||
+      errObj.response?.status === 403
     
     return (
       <div className="container mx-auto px-4 py-16">
@@ -93,7 +98,6 @@ export default function MatchesPage() {
   }
 
   return (
-    <AuthGuard>
       <div className="container mx-auto px-4 py-4 h-[calc(100vh-8rem)] flex flex-col">
         <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Matches' }]} />
         
@@ -171,7 +175,6 @@ export default function MatchesPage() {
         />
       )} */}
       </div>
-    </AuthGuard>
   )
 }
 

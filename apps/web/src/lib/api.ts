@@ -95,7 +95,13 @@ export const matchesApi = {
         params.sort_order = sortOrder.trim()
       }
       const response = await api.get('/matches', { params }) // Remove trailing slash to match FastAPI route
-      // Ensure we always return an array, even if the API returns null/undefined
+      if (response.status === 401 || response.status === 403) {
+        const err = new Error(
+          response.status === 401 ? '401 Unauthorized' : '403 Forbidden'
+        ) as Error & { response?: typeof response }
+        err.response = response
+        throw err
+      }
       if (response.status >= 200 && response.status < 300) {
         return Array.isArray(response.data) ? response.data : []
       }
@@ -114,14 +120,31 @@ export const matchesApi = {
   },
   get: async (matchId: number) => {
     const response = await api.get(`/matches/${matchId}`)
+    if (response.status >= 400) {
+      const err = new Error(response.data?.detail || 'Match not found')
+      ;(err as any).response = response
+      throw err
+    }
     return response.data
   },
   create: async (data: any) => {
     const response = await api.post('/matches', data)
+    if (response.status >= 400) {
+      const err = new Error(response.data?.detail || 'Create failed') as Error & {
+        response?: typeof response
+      }
+      err.response = response
+      throw err
+    }
     return response.data
   },
   update: async (matchId: number, data: any) => {
     const response = await api.put(`/matches/${matchId}`, data)
+    if (response.status >= 400) {
+      const err = new Error(response.data?.detail || 'Update failed')
+      ;(err as any).response = response
+      throw err
+    }
     return response.data
   },
   uploadVideo: async (matchId: number, file: File, onProgress?: (progress: number) => void) => {

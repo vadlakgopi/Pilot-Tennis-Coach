@@ -76,20 +76,35 @@ describe('API Client', () => {
       })
     })
 
+    it('list: throws on 401', async () => {
+      mockAxiosInstance.get.mockResolvedValue({ data: { detail: 'Not authenticated' }, status: 401 })
+
+      await expect(matchesApi.list()).rejects.toThrow('401')
+    })
+
     it('get: fetches a single match', async () => {
-      const mockMatch = { id: 1, title: 'Test Match' }
-      mockAxiosInstance.get.mockResolvedValue({ data: mockMatch })
+      const mockMatch = { id: 1, title: 'Test Match', status: 'completed' }
+      mockAxiosInstance.get.mockResolvedValue({ data: mockMatch, status: 200 })
 
       const result = await matchesApi.get(1)
-      
+
       expect(result).toEqual(mockMatch)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith('/matches/1')
+    })
+
+    it('get: throws when match not found', async () => {
+      mockAxiosInstance.get.mockResolvedValue({
+        data: { detail: 'Not found' },
+        status: 404,
+      })
+
+      await expect(matchesApi.get(999)).rejects.toThrow()
     })
 
     it('create: creates a new match', async () => {
       const matchData = { title: 'New Match', match_type: 'singles' }
       const mockMatch = { id: 1, ...matchData }
-      mockAxiosInstance.post.mockResolvedValue({ data: mockMatch })
+      mockAxiosInstance.post.mockResolvedValue({ data: mockMatch, status: 201 })
 
       const result = await matchesApi.create(matchData)
       
@@ -97,10 +112,21 @@ describe('API Client', () => {
       expect(mockAxiosInstance.post).toHaveBeenCalledWith('/matches', matchData)
     })
 
+    it('create: throws on 401', async () => {
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { detail: 'Not authenticated' },
+        status: 401,
+      })
+
+      await expect(
+        matchesApi.create({ title: 'X', match_type: 'singles' })
+      ).rejects.toThrow()
+    })
+
     it('update: updates a match', async () => {
       const updateData = { player1_name: 'Updated Player', event: 'Tournament' }
       const mockMatch = { id: 1, title: 'Test Match', ...updateData }
-      mockAxiosInstance.put.mockResolvedValue({ data: mockMatch })
+      mockAxiosInstance.put.mockResolvedValue({ data: mockMatch, status: 200 })
 
       const result = await matchesApi.update(1, updateData)
       
