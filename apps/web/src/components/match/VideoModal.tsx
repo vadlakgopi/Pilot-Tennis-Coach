@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 
 interface VideoModalProps {
@@ -12,6 +12,13 @@ interface VideoModalProps {
 
 export default function VideoModal({ isOpen, onClose, videoUrl, title }: VideoModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const [videoError, setVideoError] = useState(false)
+
+  useEffect(() => {
+    if (isOpen) {
+      setVideoError(false)
+    }
+  }, [isOpen, videoUrl])
 
   useEffect(() => {
     if (isOpen && videoRef.current) {
@@ -73,17 +80,23 @@ export default function VideoModal({ isOpen, onClose, videoUrl, title }: VideoMo
         {/* Video Player - Sporty Frame */}
         <div className="relative w-full bg-black" style={{ paddingBottom: '56.25%' }}>
           <div className="absolute inset-0 border-4 border-gray-800 rounded-lg overflow-hidden">
-            <video
-              ref={videoRef}
-              src={videoUrl}
-              controls
-              className="absolute inset-0 w-full h-full"
-              onError={(e) => {
-                console.error('Video playback error:', e)
-              }}
-            >
-              Your browser does not support the video tag.
-            </video>
+            {videoError ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 text-white gap-3">
+                <span className="text-4xl">⚠️</span>
+                <p className="text-lg font-semibold">Video unavailable</p>
+                <p className="text-sm text-gray-400">The video file could not be loaded.</p>
+              </div>
+            ) : (
+              <video
+                ref={videoRef}
+                src={videoUrl}
+                controls
+                className="absolute inset-0 w-full h-full"
+                onError={() => setVideoError(true)}
+              >
+                Your browser does not support the video tag.
+              </video>
+            )}
           </div>
           {/* Corner accents */}
           <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-blue-500 rounded-tl-lg"></div>

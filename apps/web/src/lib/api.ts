@@ -94,7 +94,7 @@ export const matchesApi = {
       if (sortOrder && sortOrder.trim()) {
         params.sort_order = sortOrder.trim()
       }
-      const response = await api.get('/matches', { params }) // Remove trailing slash to match FastAPI route
+      const response = await api.get('/matches/', { params })
       if (response.status === 401 || response.status === 403) {
         const err = new Error(
           response.status === 401 ? '401 Unauthorized' : '403 Forbidden'

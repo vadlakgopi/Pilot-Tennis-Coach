@@ -1,9 +1,10 @@
 """
-Enhanced Ball Tracking Module using YOLOv8 + Kalman Filter
+Enhanced Ball Tracking Module using TrackNetV2 + YOLOv8 + Kalman Filter
 Tracks tennis ball with >90% frame detection and smoothed trajectory
 """
 import cv2
 import numpy as np
+from collections import deque
 from typing import List, Dict, Optional, Tuple
 from dataclasses import dataclass
 from app.utils.logger import log_info, log_warning, log_error
@@ -141,6 +142,10 @@ class EnhancedBallTracker:
         else:
             self.detection_model = None
         
+        # TrackNetV2 temporal ball detector (3-frame rolling buffer)
+        self._frame_buffer: deque = deque(maxlen=3)
+        self.tracknet_model = self._load_tracknet()
+
         # Color-based detection as fallback
         self.ball_color_range = {
             'yellow': ([20, 100, 100], [30, 255, 255]),  # HSV range for yellow
@@ -154,31 +159,65 @@ class EnhancedBallTracker:
         self.detection_count = 0
         self.total_frames = 0
     
+    def _load_tracknet(self):
+        """Load TrackNetV2 model if weights are available."""
+        try:
+            import torch
+            from app.processors.tracknet_v2 import TrackNetV2
+            from app.utils.download_weights import ensure_tracknet_weights
+            from app.config import settings
+
+            ok = ensure_tracknet_weights(
+                settings.TRACKNET_WEIGHTS_PATH, settings.TRACKNET_WEIGHTS_URL
+            )
+            if not ok:
+                log_warning("TrackNetV2 weights unavailable; using YOLO+color fallback.")
+                return None
+
+            model = TrackNetV2()
+            import torch
+            state = torch.load(settings.TRACKNET_WEIGHTS_PATH, map_location="cpu")
+            model.load_state_dict(state)
+            model.eval()
+            log_info("TrackNetV2 loaded for ball tracking")
+            return model
+        except Exception as exc:
+            log_warning(f"Could not load TrackNetV2: {exc}")
+            return None
+
     async def track(self, frame: np.ndarray, timestamp: float, court_calibration=None) -> Optional[BallDetection]:
         """
-        Track ball in a frame using YOLOv8 + Kalman filter
-        
+        Track ball in a frame using TrackNetV2 → YOLOv8 → color fallback + Kalman filter.
+
         Args:
             frame: Video frame
             timestamp: Frame timestamp in seconds
             court_calibration: Optional court calibration for coordinate conversion
-            
+
         Returns:
             BallDetection if ball found/predicted, None otherwise
         """
         self.total_frames += 1
+        self._frame_buffer.append(frame)
         detected_position = None
         confidence = 0.0
         is_detected = False
-        
-        # Method 1: Try YOLOv8 detection
-        if self.detection_model:
+
+        # Method 1: TrackNetV2 temporal detection (best for fast-moving ball)
+        if self.tracknet_model is not None:
+            detected_position, confidence = await self._detect_with_tracknet(frame)
+            if detected_position:
+                is_detected = True
+                self.detection_count += 1
+
+        # Method 2: YOLOv8 detection
+        if not detected_position and self.detection_model:
             detected_position, confidence = await self._detect_with_yolo(frame)
             if detected_position:
                 is_detected = True
                 self.detection_count += 1
-        
-        # Method 2: Fallback to color-based detection
+
+        # Method 3: Color-based detection (final fallback)
         if not detected_position:
             detected_position, confidence = await self._detect_with_color(frame)
             if detected_position:
@@ -223,6 +262,30 @@ class EnhancedBallTracker:
         
         return detection
     
+    async def _detect_with_tracknet(self, frame: np.ndarray) -> Tuple[Optional[Tuple[float, float]], float]:
+        """Detect ball using TrackNetV2 on the 3-frame rolling buffer."""
+        if len(self._frame_buffer) < 3:
+            return None, 0.0
+        try:
+            import torch
+            from app.processors.tracknet_v2 import TrackNetV2
+
+            preprocessed = [TrackNetV2.preprocess_frame(f) for f in self._frame_buffer]
+            input_tensor = torch.cat(preprocessed, dim=0).unsqueeze(0)  # (1, 9, 288, 512)
+            with torch.no_grad():
+                heatmap = self.tracknet_model(input_tensor)  # (1, 1, 288, 512)
+
+            result = TrackNetV2.extract_ball_position(heatmap[0], threshold=0.5)
+            if result is None:
+                return None, 0.0
+
+            x_norm, y_norm, confidence = result
+            orig_h, orig_w = frame.shape[:2]
+            return (x_norm * orig_w, y_norm * orig_h), confidence
+        except Exception as exc:
+            log_warning(f"TrackNetV2 inference error: {exc}")
+            return None, 0.0
+
     async def _detect_with_yolo(self, frame: np.ndarray) -> Tuple[Optional[Tuple[float, float]], float]:
         """Detect ball using YOLOv8 (trained model or generic)"""
         try:

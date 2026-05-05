@@ -7,10 +7,19 @@ import { useMutation } from '@tanstack/react-query'
 import { matchesApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import Breadcrumbs from '@/components/layout/Breadcrumbs'
+import AuthGuard from '@/components/auth/AuthGuard'
 
 type UploadStage = 'idle' | 'creating' | 'uploading' | 'completed' | 'error'
 
 export default function UploadPage() {
+  return (
+    <AuthGuard>
+      <UploadContent />
+    </AuthGuard>
+  )
+}
+
+function UploadContent() {
   const router = useRouter()
   const [file, setFile] = useState<File | null>(null)
   const [videoPreview, setVideoPreview] = useState<string | null>(null)

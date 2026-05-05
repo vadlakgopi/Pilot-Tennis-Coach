@@ -8,7 +8,6 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import StatusExplanation from '@/components/match/StatusExplanation'
-import VideoModal from '@/components/match/VideoModal'
 import Breadcrumbs from '@/components/layout/Breadcrumbs'
 import AuthGuard from '@/components/auth/AuthGuard'
 
@@ -28,11 +27,6 @@ function MatchDetailContent() {
   const idStr = Array.isArray(rawId) ? rawId[0] : rawId
   const matchId = idStr != null && String(idStr).trim() !== '' ? Number(idStr) : NaN
   const queryClient = useQueryClient()
-  const [videoModal, setVideoModal] = useState<{ isOpen: boolean; url: string; title: string }>({
-    isOpen: false,
-    url: '',
-    title: ''
-  })
   const [isEditing, setIsEditing] = useState(false)
   const [editData, setEditData] = useState({
     player1_name: '',
@@ -279,85 +273,36 @@ function MatchDetailContent() {
                   {/* Highlights Video */}
                   {(() => {
                     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
-                    const highlightsUrl = token 
+                    const highlightsUrl = token
                       ? `${API_URL}/videos/matches/${matchId}/highlights-video?token=${token}`
                       : null
-                    
-                    const handleHighlightsClick = async () => {
-                      if (!highlightsUrl) {
-                        alert('Something is wrong, talk to my boss')
-                        return
-                      }
-                      
-                      try {
-                        const response = await fetch(highlightsUrl, { method: 'HEAD' })
-                        if (response.ok) {
-                          setVideoModal({
-                            isOpen: true,
-                            url: highlightsUrl,
-                            title: 'Match Highlights'
-                          })
-                        } else {
-                          alert('Something is wrong, talk to my boss')
-                        }
-                      } catch (error) {
-                        alert('Something is wrong, talk to my boss')
-                      }
-                    }
-                    
-                    return (
+                    return highlightsUrl ? (
                       <button
-                        onClick={handleHighlightsClick}
-                        className="bg-white/95 backdrop-blur-md rounded-lg border-2 border-blue-500 shadow-xl px-4 py-2 hover:bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                        disabled={!token}
+                        onClick={() => window.open(highlightsUrl, '_blank')}
+                        className="bg-white/95 backdrop-blur-md rounded-lg border-2 border-blue-500 shadow-xl px-4 py-2 hover:bg-white transition-all flex items-center gap-2"
                       >
                         <span className="text-lg">🎬</span>
                         <span className="font-bold text-xs text-gray-900">Highlights</span>
                       </button>
-                    )
+                    ) : null
                   })()}
 
                   {/* Full Match Video */}
-                  {match.videos && match.videos.length > 0 ? (
-                    (() => {
-                      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
-                      const fullVideoUrl = token 
-                        ? `${API_URL}/videos/matches/${matchId}/video?token=${token}`
-                        : null
-                      
-                      const handleFullVideoClick = async () => {
-                        if (!fullVideoUrl) {
-                          return
-                        }
-                        
-                        try {
-                          const response = await fetch(fullVideoUrl, { method: 'HEAD' })
-                          if (response.ok) {
-                            setVideoModal({
-                              isOpen: true,
-                              url: fullVideoUrl,
-                              title: 'Full Match Video'
-                            })
-                          } else {
-                            alert('Something is wrong, talk to my boss')
-                          }
-                        } catch (error) {
-                          alert('Something is wrong, talk to my boss')
-                        }
-                      }
-                      
-                      return fullVideoUrl ? (
-                        <button
-                          onClick={handleFullVideoClick}
-                          className="bg-white/95 backdrop-blur-md rounded-lg border-2 border-green-500 shadow-xl px-4 py-2 hover:bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                          disabled={!token}
-                        >
-                          <span className="text-lg">🎾</span>
-                          <span className="font-bold text-xs text-gray-900">Full Match</span>
-                        </button>
-                      ) : null
-                    })()
-                  ) : null}
+                  {match.videos && match.videos.length > 0 && (() => {
+                    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+                    const fullVideoUrl = token
+                      ? `${API_URL}/videos/matches/${matchId}/video?token=${token}`
+                      : null
+                    return fullVideoUrl ? (
+                      <button
+                        onClick={() => window.open(fullVideoUrl, '_blank')}
+                        className="bg-white/95 backdrop-blur-md rounded-lg border-2 border-green-500 shadow-xl px-4 py-2 hover:bg-white transition-all flex items-center gap-2"
+                      >
+                        <span className="text-lg">🎾</span>
+                        <span className="font-bold text-xs text-gray-900">Full Match</span>
+                      </button>
+                    ) : null
+                  })()}
                 </div>
 
                 {/* Player 1 - Left Side */}
@@ -439,12 +384,6 @@ function MatchDetailContent() {
         </div>
       </div>
 
-      <VideoModal
-        isOpen={videoModal.isOpen}
-        onClose={() => setVideoModal({ isOpen: false, url: '', title: '' })}
-        videoUrl={videoModal.url}
-        title={videoModal.title}
-      />
     </>
   )
 }

@@ -1,33 +1,30 @@
 'use client'
 
 import Link from 'next/link'
-import { useLayoutEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useQuery } from '@tanstack/react-query'
 import { usersApi, matchesApi } from '@/lib/api'
+import AuthGuard from '@/components/auth/AuthGuard'
 
 export default function Home() {
-  const [hasToken, setHasToken] = useState(false)
+  return (
+    <AuthGuard>
+      <HomeContent />
+    </AuthGuard>
+  )
+}
 
-  useLayoutEffect(() => {
-    const sync = () => setHasToken(!!localStorage.getItem('auth_token'))
-    sync()
-    window.addEventListener('storage', sync)
-    return () => window.removeEventListener('storage', sync)
-  }, [])
-
+function HomeContent() {
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
     queryFn: usersApi.getProfile,
     staleTime: 5 * 60 * 1000,
-    enabled: hasToken,
   })
 
   const { data: matches, isLoading: matchesLoading } = useQuery({
     queryKey: ['matches'],
     queryFn: () => matchesApi.list(),
     staleTime: 2 * 60 * 1000,
-    enabled: hasToken,
   })
 
   // Calculate member since
@@ -106,145 +103,99 @@ export default function Home() {
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-green-400/10 to-cyan-400/10 rounded-full blur-3xl"></div>
 
         <div className="relative container mx-auto px-6 py-12">
-          {!hasToken ? (
-            <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 shadow-xl border border-white/20 max-w-4xl mx-auto">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-3xl shadow-lg">
-                  🎾
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Welcome Section - Takes 2 columns */}
+            <div className="lg:col-span-2">
+              <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 shadow-xl border border-white/20">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-3xl shadow-lg">
+                    👋
+                  </div>
+                  <div>
+                    <h1 className="text-4xl font-black text-gray-900 mb-1">
+                      Welcome Back!
+                    </h1>
+                    <p className="text-lg text-gray-600">
+                      {user?.username || 'Tennis Player'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h1 className="text-4xl font-black text-gray-900 mb-1">Tennis Buddy</h1>
-                  <p className="text-lg text-gray-600">AI-powered match analytics and coaching insights</p>
+                <p className="text-gray-700 mb-8 text-lg leading-relaxed">
+                  Your AI-powered tennis performance coach is ready to help you improve your game with advanced analytics and insights.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <Link href="/matches">
+                    <Button
+                      size="lg"
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-8 py-6 text-base shadow-lg hover:shadow-xl transition-all duration-300"
+                    >
+                      <span className="mr-2 text-xl">🎾</span>
+                      View Matches
+                    </Button>
+                  </Link>
+                  <Link href="/upload">
+                    <Button
+                      size="lg"
+                      className="bg-white border-2 border-green-600 text-green-700 hover:bg-green-50 font-bold px-8 py-6 text-base shadow-md hover:shadow-lg transition-all duration-300"
+                    >
+                      <span className="mr-2 text-xl">📤</span>
+                      Upload Match
+                    </Button>
+                  </Link>
+                  <Link href="/summary">
+                    <Button
+                      size="lg"
+                      className="bg-white border-2 border-blue-600 text-blue-700 hover:bg-blue-50 font-bold px-8 py-6 text-base shadow-md hover:shadow-lg transition-all duration-300"
+                    >
+                      <span className="mr-2 text-xl">📊</span>
+                      View Summary
+                    </Button>
+                  </Link>
                 </div>
-              </div>
-              <p className="text-gray-700 mb-8 text-lg leading-relaxed">
-                Upload matches, explore stats, and improve your game — no extra wait on this page. Sign in when
-                you&apos;re ready for your personal dashboard.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <Link href="/login">
-                  <Button
-                    size="lg"
-                    className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold px-8 py-6 text-base shadow-lg hover:shadow-xl transition-all duration-300"
-                  >
-                    Sign In
-                  </Button>
-                </Link>
-                <Link href="/matches">
-                  <Button
-                    size="lg"
-                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-8 py-6 text-base shadow-lg hover:shadow-xl transition-all duration-300"
-                  >
-                    <span className="mr-2 text-xl">🎾</span>
-                    View Matches
-                  </Button>
-                </Link>
-                <Link href="/upload">
-                  <Button
-                    size="lg"
-                    className="bg-white border-2 border-green-600 text-green-700 hover:bg-green-50 font-bold px-8 py-6 text-base shadow-md hover:shadow-lg transition-all duration-300"
-                  >
-                    <span className="mr-2 text-xl">📤</span>
-                    Upload Match
-                  </Button>
-                </Link>
               </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Welcome Section - Takes 2 columns */}
-              <div className="lg:col-span-2">
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 shadow-xl border border-white/20">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-3xl shadow-lg">
-                      👋
-                    </div>
-                    <div>
-                      <h1 className="text-4xl font-black text-gray-900 mb-1">
-                        Welcome Back!
-                      </h1>
-                      <p className="text-lg text-gray-600">
-                        {user?.username || 'Tennis Player'}
-                      </p>
-                    </div>
-                  </div>
-                  <p className="text-gray-700 mb-8 text-lg leading-relaxed">
-                    Your AI-powered tennis performance coach is ready to help you improve your game with advanced analytics and insights.
-                  </p>
-                  <div className="flex flex-wrap gap-3">
-                    <Link href="/matches">
-                      <Button 
-                        size="lg"
-                        className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-8 py-6 text-base shadow-lg hover:shadow-xl transition-all duration-300"
-                      >
-                        <span className="mr-2 text-xl">🎾</span>
-                        View Matches
-                      </Button>
-                    </Link>
-                    <Link href="/upload">
-                      <Button 
-                        size="lg"
-                        className="bg-white border-2 border-green-600 text-green-700 hover:bg-green-50 font-bold px-8 py-6 text-base shadow-md hover:shadow-lg transition-all duration-300"
-                      >
-                        <span className="mr-2 text-xl">📤</span>
-                        Upload Match
-                      </Button>
-                    </Link>
-                    <Link href="/summary">
-                      <Button 
-                        size="lg"
-                        className="bg-white border-2 border-blue-600 text-blue-700 hover:bg-blue-50 font-bold px-8 py-6 text-base shadow-md hover:shadow-lg transition-all duration-300"
-                      >
-                        <span className="mr-2 text-xl">📊</span>
-                        View Summary
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </div>
 
-              {/* Quick Stats - Takes 1 column */}
-              <div className="space-y-4">
-                {userLoading || matchesLoading ? (
-                  <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 shadow-xl border border-white/20 flex items-center justify-center h-full">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            {/* Quick Stats - Takes 1 column */}
+            <div className="space-y-4">
+              {userLoading || matchesLoading ? (
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 shadow-xl border border-white/20 flex items-center justify-center h-full">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : (
+                <>
+                  <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl p-6 shadow-xl border border-blue-400/20 transform hover:scale-105 transition-transform duration-300">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl">
+                        👤
+                      </div>
+                    </div>
+                    <p className="text-white/80 text-sm font-medium mb-1">Member Since</p>
+                    <p className="text-white text-2xl font-black">{getMemberSince()}</p>
                   </div>
-                ) : (
-                  <>
-                    <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl p-6 shadow-xl border border-blue-400/20 transform hover:scale-105 transition-transform duration-300">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl">
-                          👤
-                        </div>
+
+                  <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 shadow-xl border border-green-400/20 transform hover:scale-105 transition-transform duration-300">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl">
+                        📤
                       </div>
-                      <p className="text-white/80 text-sm font-medium mb-1">Member Since</p>
-                      <p className="text-white text-2xl font-black">{getMemberSince()}</p>
                     </div>
-                    
-                    <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 shadow-xl border border-green-400/20 transform hover:scale-105 transition-transform duration-300">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl">
-                          📤
-                        </div>
+                    <p className="text-white/80 text-sm font-medium mb-1">Matches Uploaded</p>
+                    <p className="text-white text-3xl font-black">{totalMatches}</p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 shadow-xl border border-purple-400/20 transform hover:scale-105 transition-transform duration-300">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl">
+                        ✅
                       </div>
-                      <p className="text-white/80 text-sm font-medium mb-1">Matches Uploaded</p>
-                      <p className="text-white text-3xl font-black">{totalMatches}</p>
                     </div>
-                    
-                    <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 shadow-xl border border-purple-400/20 transform hover:scale-105 transition-transform duration-300">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl">
-                          ✅
-                        </div>
-                      </div>
-                      <p className="text-white/80 text-sm font-medium mb-1">Matches Analyzed</p>
-                      <p className="text-white text-3xl font-black">{analyzedMatches}</p>
-                    </div>
-                  </>
-                )}
-              </div>
+                    <p className="text-white/80 text-sm font-medium mb-1">Matches Analyzed</p>
+                    <p className="text-white text-3xl font-black">{analyzedMatches}</p>
+                  </div>
+                </>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </section>
 

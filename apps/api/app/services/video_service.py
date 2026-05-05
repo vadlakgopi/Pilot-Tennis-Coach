@@ -102,7 +102,13 @@ class VideoService:
         if not video:
             return None
         
-        return video.file_path
+        # Prefer faststart-remuxed version if available (moov atom at front for browser seeking)
+        raw_path = video.file_path
+        if raw_path:
+            fs_path = raw_path.replace('video.mp4', 'video_fs.mp4').replace('video.mov', 'video_fs.mp4')
+            if os.path.exists(self._resolve_file_path(fs_path)):
+                return fs_path
+        return raw_path
     
     async def get_thumbnail_path(self, match_id: int, user_id: int) -> Optional[str]:
         """Get thumbnail path for a match"""

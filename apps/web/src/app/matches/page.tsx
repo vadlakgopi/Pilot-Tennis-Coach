@@ -9,8 +9,17 @@ import StatusExplanation from '@/components/match/StatusExplanation'
 import MatchTile from '@/components/match/MatchTile'
 // import VideoPreviewModal from '@/components/match/VideoPreviewModal' // Disabled for now
 import Breadcrumbs from '@/components/layout/Breadcrumbs'
+import AuthGuard from '@/components/auth/AuthGuard'
 
 export default function MatchesPage() {
+  return (
+    <AuthGuard>
+      <MatchesContent />
+    </AuthGuard>
+  )
+}
+
+function MatchesContent() {
   // const [previewMatchId, setPreviewMatchId] = useState<number | null>(null) // Disabled for now
   const [sortBy, setSortBy] = useState<string>('created_at')
   const [sortOrder, setSortOrder] = useState<string>('desc')
@@ -145,7 +154,7 @@ export default function MatchesPage() {
       {!matches || matches.length === 0 ? (
         <div className="text-center py-12 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-dashed border-green-300">
           <div className="text-5xl mb-3">🎾</div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">No matches yet</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">No matches uploaded yet</h2>
           <p className="text-sm text-gray-600 mb-4">Upload your first match video to get started!</p>
           <Link href="/upload">
             <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white font-bold">

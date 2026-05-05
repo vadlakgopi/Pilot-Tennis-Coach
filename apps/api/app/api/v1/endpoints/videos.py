@@ -98,12 +98,11 @@ async def stream_match_video(
     video_path = await video_service.get_video_path(match_id, user_id)
     if not video_path:
         raise HTTPException(status_code=404, detail="Video not found")
-    
-    # Get file size
+
     file_size = video_service.get_file_size(video_path)
     if file_size is None:
         raise HTTPException(status_code=404, detail="Video file not found")
-    
+
     # Parse range header if present
     if range_header:
         start, end = parse_range_header(range_header, file_size)
@@ -118,28 +117,24 @@ async def stream_match_video(
         
         response = StreamingResponse(
             video_service.stream_video_range(video_path, start, end),
-            status_code=206,  # Partial Content
+            status_code=206,
             headers=headers,
             media_type="video/mp4"
         )
-        # Add CORS headers explicitly for video streaming
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Expose-Headers"] = "Content-Range, Content-Length, Accept-Ranges"
         return response
     else:
-        # Full file stream
         headers = {
             "Accept-Ranges": "bytes",
             "Content-Length": str(file_size),
             "Content-Type": "video/mp4",
         }
-        
         response = StreamingResponse(
             video_service.stream_video(video_path),
             headers=headers,
             media_type="video/mp4"
         )
-        # Add CORS headers explicitly for video streaming
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Expose-Headers"] = "Content-Range, Content-Length, Accept-Ranges"
         return response
