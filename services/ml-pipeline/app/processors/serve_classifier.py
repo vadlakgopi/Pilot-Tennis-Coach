@@ -196,17 +196,32 @@ class ServeTypeClassifier:
         return 'flat', 0.5
     
     def _determine_placement(self, ball_det: BallDetection) -> Optional[str]:
-        """Determine serve placement (wide, T, body)"""
-        if not ball_det or not ball_det.position:
+        """
+        Classify serve placement as 'T', 'wide', or 'body'.
+
+        Uses the horizontal fraction of the post-serve ball velocity to
+        discriminate between serve directions without requiring full court
+        calibration:
+          - T serve:    mostly forward, low horizontal component
+          - Wide serve: strong horizontal component (angled to sideline)
+          - Body serve: moderate horizontal, aimed at receiver's torso
+        """
+        if not ball_det or not ball_det.velocity:
             return None
-        
-        # This would need court coordinates
-        # Simplified: use position relative to court
-        x, y = ball_det.position
-        
-        # Would need court calibration to determine zones
-        # For now, return None
-        return None
+
+        vx, vy = ball_det.velocity
+        speed = float(np.sqrt(vx ** 2 + vy ** 2))
+        if speed < 1e-6:
+            return None
+
+        horiz_ratio = abs(vx) / speed  # 0 = dead straight, 1 = fully sideways
+
+        if horiz_ratio < 0.25:
+            return "T"
+        elif horiz_ratio > 0.55:
+            return "wide"
+        else:
+            return "body"
     
     def _create_pose_sequence(self, pose_keypoints: np.ndarray) -> np.ndarray:
         """Create pose sequence from keypoints"""

@@ -70,6 +70,11 @@ class EnhancedPlayerTracker:
         self.player_mapping = {}  # track_id -> player_number (1 or 2)
         self.next_track_id = 1
         self.last_positions = {}  # track_id -> last center position
+
+        # ReID appearance descriptors (HSV histograms, one per player slot)
+        self._player_descriptors: dict = {}  # player_number -> np.ndarray
+        self._bootstrap_frame_count = 0
+        self._BOOTSTRAP_FRAMES = 30  # spatial-only assignment for first N frames
     
     async def track(self, frame: np.ndarray, timestamp: float) -> List[PlayerDetection]:
         """
@@ -90,7 +95,8 @@ class EnhancedPlayerTracker:
         
         detections = []
         current_track_ids = set()
-        
+        self._bootstrap_frame_count += 1
+
         for result in results:
             boxes = result.boxes
             if boxes is not None:
@@ -99,29 +105,29 @@ class EnhancedPlayerTracker:
                     if int(box.cls) == 0:  # person class
                         bbox = box.xyxy[0].cpu().numpy()
                         confidence = float(box.conf[0].cpu().numpy())
-                        
+
                         # Get tracking ID from YOLOv8 tracking
                         track_id = int(box.id[0]) if box.id is not None else None
-                        
+
                         if track_id is None:
                             track_id = self.next_track_id
                             self.next_track_id += 1
-                        
+
                         # Update track history
                         if track_id not in self.tracks:
                             self.tracks[track_id] = []
-                        
+
                         center = self._get_bbox_center(bbox)
-                        
+
                         # Calculate movement speed
                         speed = self._calculate_speed(track_id, center, timestamp)
-                        
+
                         # Update distance traveled
                         distance = self._update_distance(track_id, center)
-                        
-                        # Assign persistent player number (1 or 2) based on court side
-                        player_number = self._assign_player_number(track_id, bbox, frame.shape)
-                        
+
+                        # Assign persistent player number (1 or 2) using ReID
+                        player_number = self._assign_player_number(track_id, bbox, frame)
+
                         # Extract pose keypoints for shot classification
                         pose_keypoints = await self._extract_pose(frame, bbox)
                         
@@ -153,31 +159,98 @@ class EnhancedPlayerTracker:
         
         return detections
     
-    def _assign_player_number(self, track_id: int, bbox: np.ndarray, image_shape: Tuple) -> int:
+    def _assign_player_number(self, track_id: int, bbox: np.ndarray, frame: np.ndarray) -> int:
         """
-        Assign persistent player number (1 or 2) based on court position
-        Uses historical position to maintain consistency
+        Assign persistent player number (1 or 2) using appearance-based ReID.
+
+        During the first _BOOTSTRAP_FRAMES frames we rely on court-side position
+        to seed the appearance descriptors, then switch to cosine-similarity ReID
+        so identity survives track-ID resets (occlusions, camera cuts, player
+        crossing the net).
         """
-        center_x = (bbox[0] + bbox[2]) / 2
-        image_width = image_shape[1]
-        
-        # If we've seen this track before, maintain the same player number
+        # Known track → return cached assignment
         if track_id in self.player_mapping:
             return self.player_mapping[track_id]
-        
-        # Assign based on court side (left = player 1, right = player 2)
-        player_number = 1 if center_x < image_width / 2 else 2
-        
-        # Ensure we don't have both players on same side
-        # Check if other player is already assigned
-        existing_players = set(self.player_mapping.values())
-        if len(existing_players) == 1:
-            other_number = list(existing_players)[0]
-            if player_number == other_number:
-                player_number = 2 if other_number == 1 else 1
-        
+
+        descriptor = self._extract_hsv_histogram(frame, bbox)
+
+        # Bootstrap phase: spatial assignment to seed descriptors
+        if self._bootstrap_frame_count <= self._BOOTSTRAP_FRAMES or not self._player_descriptors:
+            player_number = self._assign_by_position(bbox, frame.shape)
+            player_number = self._resolve_conflict(player_number)
+        else:
+            # ReID: find player whose stored descriptor best matches this one
+            best_player, best_sim = None, -1.0
+            for pnum, ref in self._player_descriptors.items():
+                sim = self._cosine_similarity(descriptor, ref)
+                if sim > best_sim:
+                    best_sim, best_player = sim, pnum
+
+            # Weak appearance match → fall back to spatial
+            if best_sim < 0.5 or best_player is None:
+                player_number = self._assign_by_position(bbox, frame.shape)
+                player_number = self._resolve_conflict(player_number)
+            else:
+                player_number = best_player
+
+        # Update stored descriptor (exponential moving average)
+        if player_number in self._player_descriptors:
+            self._player_descriptors[player_number] = (
+                0.85 * self._player_descriptors[player_number] + 0.15 * descriptor
+            )
+        else:
+            self._player_descriptors[player_number] = descriptor
+
         self.player_mapping[track_id] = player_number
         return player_number
+
+    def _assign_by_position(self, bbox: np.ndarray, image_shape: Tuple) -> int:
+        """Return player number based on horizontal court-side."""
+        center_x = (bbox[0] + bbox[2]) / 2
+        return 1 if center_x < image_shape[1] / 2 else 2
+
+    def _resolve_conflict(self, candidate: int) -> int:
+        """Flip candidate if both tracks are mapped to the same player slot."""
+        assigned = set(self.player_mapping.values())
+        if len(assigned) == 1 and candidate in assigned:
+            return 2 if candidate == 1 else 1
+        return candidate
+
+    def _extract_hsv_histogram(self, frame: np.ndarray, bbox: np.ndarray) -> np.ndarray:
+        """
+        Compute a normalised HSV histogram of the torso region (middle 50% height).
+        Returns a 1-D float32 vector (H×S×V bins) for cosine-similarity ReID.
+        """
+        x1, y1, x2, y2 = bbox.astype(int)
+        h = y2 - y1
+        # Torso: rows 25%–75% of the bounding box height
+        ty1 = max(0, y1 + h // 4)
+        ty2 = min(frame.shape[0], y1 + 3 * h // 4)
+        tx1, tx2 = max(0, x1), min(frame.shape[1], x2)
+
+        roi = frame[ty1:ty2, tx1:tx2]
+        if roi.size == 0:
+            return np.zeros(18 * 8 * 8, dtype=np.float32)
+
+        hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+        hist = cv2.calcHist(
+            [hsv], [0, 1, 2], None,
+            [18, 8, 8],
+            [0, 180, 0, 256, 0, 256],
+        )
+        hist = hist.flatten().astype(np.float32)
+        total = hist.sum()
+        if total > 0:
+            hist /= total
+        return hist
+
+    def _cosine_similarity(self, a: np.ndarray, b: np.ndarray) -> float:
+        """Cosine similarity between two descriptor vectors."""
+        norm_a = np.linalg.norm(a)
+        norm_b = np.linalg.norm(b)
+        if norm_a == 0.0 or norm_b == 0.0:
+            return 0.0
+        return float(np.dot(a, b) / (norm_a * norm_b))
     
     def _get_bbox_center(self, bbox: np.ndarray) -> Tuple[float, float]:
         """Get center point of bounding box"""

@@ -249,7 +249,9 @@ class AnalyticsEngine:
             "direction": data.get('direction', None),
             "outcome": data.get('outcome', 'in'),
             "court_position": data.get('court_position', [0, 0]),
-            "confidence": data.get('confidence', 0.8)
+            "confidence": data.get('confidence', 0.8),
+            "serve_speed_mps": data.get('serve_speed_mps', None),
+            "placement": data.get('placement', None),
         }
 
 

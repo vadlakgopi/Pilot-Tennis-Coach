@@ -23,16 +23,19 @@ from app.processors.court_detector import CourtCalibration
 
 @dataclass
 class Shot:
-    """Classified shot data"""
+    """Classified shot data — canonical schema used by all analytics engines."""
     shot_id: int
     player_number: int
     timestamp: float
     shot_type: str  # forehand, backhand, volley, serve, etc.
-    direction: Optional[str] = None  # cross-court, down-the-line, etc.
-    outcome: Optional[str] = None  # winner, error, in_play
+    direction: Optional[str] = None   # cross-court, down-the-line, etc.
+    outcome: Optional[str] = None     # winner, error, in_play
     court_position: Optional[Tuple[float, float]] = None
     confidence: float = 0.0
     stroke_phase: Optional[str] = None  # ready, stroke, finish
+    # Serve-specific fields (None for non-serve shots)
+    serve_speed_mps: Optional[float] = None
+    placement: Optional[str] = None   # T, wide, body
 
 
 # Stroke class mapping from dataset

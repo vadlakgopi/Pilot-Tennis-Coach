@@ -1,11 +1,12 @@
 """
 Main Video Processor - Orchestrates the entire ML pipeline
 """
+import asyncio
 import cv2
 import httpx
 from typing import Dict, List, Any, Optional
 from app.processors.court_detector import CourtDetector
-from app.processors.player_tracker import PlayerTracker
+from app.processors.enhanced_player_tracker import EnhancedPlayerTracker as PlayerTracker
 from app.processors.enhanced_ball_tracker import EnhancedBallTracker
 from app.processors.enhanced_shot_classifier import EnhancedShotClassifier
 from app.processors.analytics_engine import AnalyticsEngine
@@ -178,33 +179,52 @@ class VideoProcessor:
             return None
     
     async def _save_results(self, analytics: Dict[str, Any]):
-        """Save processing results to database via API"""
+        """Save processing results to database via API with exponential backoff retry."""
         match_id = analytics.get("match_id")
         if not match_id:
             log_warning(f"Match {self.match_id}: match_id not found in analytics, cannot save results")
             return
-        
+
         api_url = f"{settings.API_URL}/api/{settings.API_VERSION}/analytics/matches/{match_id}/save-from-ml"
-        
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(
-                    api_url,
-                    json=analytics,
-                    headers={
-                        "X-Service-Token": settings.ML_SERVICE_TOKEN,
-                        "Content-Type": "application/json"
-                    }
-                )
-                
+        headers = {
+            "X-Service-Token": settings.ML_SERVICE_TOKEN,
+            "Content-Type": "application/json",
+        }
+
+        max_retries = 3
+        last_exc: Exception = Exception("No attempts made")
+
+        for attempt in range(max_retries):
+            try:
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    response = await client.post(api_url, json=analytics, headers=headers)
+
                 if response.status_code == 200:
                     log_info(f"Match {match_id}: Successfully saved analytics")
+                    return
+                elif response.status_code < 500:
+                    # 4xx errors are client mistakes — retrying won't help
+                    msg = f"API returned {response.status_code}: {response.text}"
+                    log_error(f"Match {match_id}: {msg}")
+                    raise Exception(msg)
                 else:
-                    log_error(f"Match {match_id}: Failed to save analytics: {response.status_code} - {response.text}")
-                    raise Exception(f"API returned status {response.status_code}: {response.text}")
-                    
-        except Exception as e:
-            log_error(f"Match {match_id}: Error saving analytics to API: {str(e)}")
-            raise Exception(f"Failed to save analytics: {str(e)}")
+                    last_exc = Exception(f"API returned {response.status_code}: {response.text}")
+                    log_warning(
+                        f"Match {match_id}: Attempt {attempt + 1}/{max_retries} failed "
+                        f"({response.status_code}); retrying…"
+                    )
+
+            except httpx.TransportError as exc:
+                last_exc = exc
+                log_warning(
+                    f"Match {match_id}: Attempt {attempt + 1}/{max_retries} transport error: {exc}; retrying…"
+                )
+
+            if attempt < max_retries - 1:
+                delay = 2.0 * (2 ** attempt)  # 2s, 4s
+                await asyncio.sleep(delay)
+
+        log_error(f"Match {match_id}: Failed to save analytics after {max_retries} attempts: {last_exc}")
+        raise Exception(f"Failed to save analytics after {max_retries} attempts: {last_exc}")
 
 

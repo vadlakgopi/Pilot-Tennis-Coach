@@ -25,6 +25,8 @@ scikit-image==0.22.0
 # Utilities
 python-dotenv==1.0.0
 httpx==0.25.2
+requests==2.31.0
+gdown==4.7.3
 
 # Development
 pytest==7.4.3

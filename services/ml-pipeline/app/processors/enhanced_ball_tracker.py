@@ -60,6 +60,11 @@ class KalmanFilter:
         # Identity matrix
         self.I = np.eye(4, dtype=np.float32)
     
+    def reset(self):
+        """Reset filter state — call when a long ball-gap indicates a new rally."""
+        self.state = np.zeros((4, 1), dtype=np.float32)
+        self.error_cov = np.eye(4, dtype=np.float32) * 1000
+
     def predict(self) -> Tuple[float, float]:
         """Predict next state"""
         self.state = self.F @ self.state
@@ -158,6 +163,8 @@ class EnhancedBallTracker:
         self.trajectory_history = []
         self.detection_count = 0
         self.total_frames = 0
+        self._consecutive_misses = 0
+        self._RESET_MISS_THRESHOLD = 60  # ~2 s at 30 fps — reset Kalman after this many consecutive non-detections
     
     def _load_tracknet(self):
         """Load TrackNetV2 model if weights are available."""
@@ -224,6 +231,15 @@ class EnhancedBallTracker:
                 is_detected = True
                 self.detection_count += 1
         
+        # Track consecutive misses and reset Kalman filter between rallies
+        if detected_position:
+            self._consecutive_misses = 0
+        else:
+            self._consecutive_misses += 1
+            if self._consecutive_misses >= self._RESET_MISS_THRESHOLD:
+                self.kalman_filter.reset()
+                self._consecutive_misses = 0
+
         # Use Kalman filter to smooth trajectory
         if detected_position:
             # Update Kalman filter with detection
